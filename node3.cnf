@@ -1,0 +1,51 @@
+# Workshop MySQL Group Replication
+# For demo purpose only, DO NOT USE IN PRODUCTION !
+
+[mysql]
+prompt='node3 [\h] {\u} (\d) > '
+port=14003
+
+[mysqlbackup]
+user=mysqlbackup
+password=mysqlbackup   # Not recommended in production environment 
+#backup-dir=/home/mysqlbackup
+
+[mysqld]
+port=14003
+#
+# basedir=
+# datadir=
+# ... other variables ...
+#
+
+#########################
+# Replication Framework #
+#########################
+server_id=14003          # must be different on each cluster's node
+gtid_mode=ON
+enforce_gtid_consistency=ON
+master_info_repository=TABLE
+relay_log_info_repository=TABLE
+binlog_checksum=NONE
+log_slave_updates=ON
+log_bin
+binlog_format=ROW
+
+
+#####################
+# Group Replication #
+#####################
+plugin_load=group_replication.so
+group_replication=FORCE_PLUS_PERMANENT
+transaction_write_set_extraction=XXHASH64
+group_replication_group_name="4e0f05b7-d9d0-11e6-87cf-002710cccc64"  # must be identical on all members
+group_replication_start_on_boot=OFF   
+group_replication_bootstrap_group=OFF    # Always OFF
+group_replication_single_primary_mode=ON  
+group_replication_local_address="127.0.0.1:4903"    # port must be different than instance’s ports
+group_replication_group_seeds="127.0.0.1:4902,127.0.0.1:4901" # ports must be different than instance’s ports
+
+# In case of DNS issues
+#report-port 			= 14003
+#report-host 			= localhost
+
