@@ -1,0 +1,82 @@
+#####################################################
+# Workshop MySQL Group Replication                  #
+# For demo purpose only, DO NOT USE IN PRODUCTION ! #
+#####################################################
+
+# 1/ Connect to MySQL Shell
+mysqlsh
+
+
+/* 2/ Deploy 3 local MySQL instances on ports : 3310 - 3320 - 3330 */
+dba.deploySandboxInstance(3310);
+dba.deploySandboxInstance(3320);
+dba.deploySandboxInstance(3330);
+
+
+/* 3/ Check instance configuration before the deployment */
+dba.checkInstanceConfiguration('root@localhost:3310');
+dba.checkInstanceConfiguration('root@localhost:3320');
+dba.checkInstanceConfiguration('root@localhost:3330');
+
+
+/* 4/ Connect to instance 3310 */
+\c root@localhost:3310
+ 
+
+/* 5/ Create the cluster */
+var cluster=dba.createCluster('demoCluster');
+ 
+
+/* 6/ Check the transaction set and add node 3320 to the cluster */
+cluster.checkInstanceState('root@localhost:3320');
+cluster.addInstance('root@localhost:3320');
+
+ 
+/* 7/ Check the transaction set and add node 3330 to the cluster */
+cluster.checkInstanceState('root@localhost:3330');
+cluster.addInstance('root@localhost:3330');
+ 
+
+/* 8/ Check cluster status */
+cluster.status();
+
+
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+# Deploying MySQL Router
+## 1/ Bootstrap MySQL Router 
+mysqlrouter --bootstrap root@localhost:3310 --directory ~/demoSandbox
+
+## 2/ Start MySQL router 
+~/demoSandbox/start.sh
+
+
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+# 1/ Connect to MySQL Router (default port = 6446)
+mysqlsh --uri=root@localhost:6446
+
+
+/* 2/ Select primary node’s port */
+\sql
+SELECT @@port; -- display 3310
+
+
+/* 3/ Crash the primary node */
+\js
+dba.killSandboxInstance(3310)
+
+
+-- 4/ Select primary node’s port
+\c root@localhost:6446
+\sql
+SELECT @@port; -- display 3320
+
+
+/* 5/ Check cluster status */
+\js
+dba.startSandboxInstance(3310)
+var cluster = dba.getCluster('demoCluster')
+cluster.rejoinInstance('root@localhost:3310')
+cluster.status()
+
