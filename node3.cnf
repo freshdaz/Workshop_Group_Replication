@@ -35,6 +35,8 @@ binlog_format=ROW
 #####################
 # Group Replication #
 #####################
+super_read_only=ON
+
 plugin_load=group_replication.so
 group_replication=FORCE_PLUS_PERMANENT
 transaction_write_set_extraction=XXHASH64
